@@ -8,16 +8,16 @@ class OpenRouterClient {
     this.client = new OpenAI({
       baseURL: 'https://openrouter.ai/api/v1',
       apiKey: apiKey,
-      defaultHeaders: {
-        'HTTP-Referer': 'https://github.com/codedwithlikhon/codemate',
-        'X-Title': 'CodeMate',
-      },
     });
   }
 
   async complete(prompt: string, model: string = 'meta-llama/llama-3.1-8b-instruct:free'): Promise<{ response: string; codeBlocks: any[] } | null> {
     try {
       const completion = await this.client.chat.completions.create({
+        extra_headers: {
+          'HTTP-Referer': 'https://github.com/codedwithlikhon/codemate',
+          'X-Title': 'CodeMate',
+        },
         model: model,
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 2000,
