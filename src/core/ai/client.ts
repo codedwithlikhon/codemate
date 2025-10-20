@@ -8,32 +8,26 @@ class OpenRouterClient {
     this.client = new OpenAI({
       baseURL: 'https://openrouter.ai/api/v1',
       apiKey: apiKey,
+      defaultHeaders: {
+        'HTTP-Referer': 'https://github.com/codedwithlikhon/codemate',
+        'X-Title': 'CodeMate',
+      },
     });
   }
 
-  async complete(prompt: string, model: string = 'meta-llama/llama-3.1-8b-instruct:free', response_format?: any): Promise<any | null> {
+  async complete(prompt: string, model: string = 'meta-llama/llama-3.1-8b-instruct:free'): Promise<{ response: string; codeBlocks: any[] } | null> {
     try {
       const completion = await this.client.chat.completions.create({
-        extra_headers: {
-          'HTTP-Referer': 'https://github.com/codedwithlikhon/codemate',
-          'X-Title': 'CodeMate',
-        },
         model: model,
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 2000,
-        response_format: response_format,
       });
 
       const content = completion.choices[0].message.content;
-      if (!content) {
-        return null;
-      }
-
-      if (response_format && response_format.type === 'json_schema') {
-        return JSON.parse(content);
-      } else {
+      if (content) {
         return this._parseResponse(content);
       }
+      return { response: content || '', codeBlocks: [] };
     } catch (error: any) {
       if (error.status === 429) {
         console.error('Rate limit reached. Please try again later.');
@@ -52,6 +46,8 @@ class OpenRouterClient {
     const codeBlocks: any[] = [];
     let match;
 
+    const responseWithoutCodeBlocks = cleanedResponse.replace(codeBlockPattern, '');
+
     while ((match = codeBlockPattern.exec(cleanedResponse)) !== null) {
       const language = match[1];
       const metadata = match[2];
@@ -60,7 +56,7 @@ class OpenRouterClient {
       codeBlocks.push({ language, metadata, code });
     }
 
-    return { response: cleanedResponse, codeBlocks };
+    return { response: responseWithoutCodeBlocks.trim(), codeBlocks };
   }
 
   private async handleRateLimit() {
