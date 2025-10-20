@@ -18,11 +18,22 @@ chat
     ]);
 
     const spinner = ora('Thinking...').start();
-    const response = await client.complete(prompt);
+    const result = await client.complete(prompt);
     spinner.stop();
 
-    if (response) {
-      console.log(chalk.green(response));
+    if (result) {
+      console.log(chalk.green(result.response));
+      if (result.codeBlocks.length > 0) {
+        console.log(chalk.yellow('\n--- Code Blocks ---'));
+        result.codeBlocks.forEach((block, index) => {
+          console.log(chalk.cyan(`Block ${index + 1}:`));
+          console.log(chalk.blue(`  Language: ${block.language}`));
+          if (block.metadata) {
+            console.log(chalk.blue(`  Metadata: ${block.metadata}`));
+          }
+          console.log(chalk.gray(block.code));
+        });
+      }
     } else {
       console.log(chalk.red('Failed to get a response.'));
     }
